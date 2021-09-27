@@ -3,12 +3,11 @@
   .header
     span(v-for="voter in voters") {{ voter }}
   row
-    span(v-for="firstChoice in firstChoices") {{ firstChoice.pick }}
+    pick(v-for="firstChoice in firstChoices", :top="frontRunners.includes(firstChoice.pick)") {{ firstChoice.pick }}
   row
-    span(v-for="secondChoice in secondChoices") {{ secondChoice }}
+    span(v-for="secondChoice in secondChoices") {{ secondChoice.pick }}
   row
-    span(v-for="thirdChoice in thirdChoices") {{ thirdChoice }}
-  span(v-for="frontrunner in frontRunners") {{ frontrunner }}
+    span(v-for="thirdChoice in thirdChoices") {{ thirdChoice.pick }}
   button(@click="onStartTally") Start Tally
   hr(style="width: 100%")
 </template>
@@ -16,21 +15,32 @@
 <script lang="ts">
 import axios from "axios";
 import styled from "vue3-styled-components";
+import { defineComponent } from "vue";
 
 const Row = styled.div`
   display: grid;
   grid-template-rows: 1fr;
   grid-template-columns: repeat(9, 1fr);
   grid-gap: 10px;
-
-  span {
-    background-color: gray;
-  }
+`;
+const Pick = styled("span", { top: Boolean })`
+  background-color: gray;
+  transition: all 1s ease-in-out;
+  transform: ${props => (props.top ? "translateY(200px)" : "")};
 `;
 
-export default {
+type Data = {
+  voters: string[];
+  firstChoices: { pick: string; active: boolean }[];
+  secondChoices: { pick: string; active: boolean }[];
+  thirdChoices: { pick: string; active: boolean }[];
+  frontRunners: string[];
+  counting: boolean;
+};
+
+export default defineComponent({
   name: "App",
-  data: () => ({
+  data: (): Data => ({
     voters: [],
     firstChoices: [],
     secondChoices: [],
@@ -39,31 +49,40 @@ export default {
     counting: false
   }),
   components: {
-    row: Row
+    row: Row,
+    pick: Pick
   },
   async mounted() {
     try {
-      const { data } = await axios.get(`http://localhost:3000/votes`, {
-        headers: {
-          "Content-Type": "application/json"
+      const { data }: { data: object[] } = await axios.get(
+        `http://localhost:3000/votes`,
+        {
+          headers: {
+            "Content-Type": "application/json"
+          }
         }
-      });
+      );
       this.voters = Object.keys(data[0]);
-      this.firstChoices = Object.values(data[0]).map(pick => ({
-        pick,
-        active: true
-      }));
-      this.secondChoices = Object.values(data[1]);
-      this.thirdChoices = Object.values(data[2]);
+      this.firstChoices = Object.values(data[0]).map(createPickObj);
+      this.secondChoices = Object.values(data[1]).map(createPickObj);
+      this.thirdChoices = Object.values(data[2]).map(createPickObj);
       console.log(`DATA`, data);
     } catch (error) {
       console.log(`ERROR`, error);
     }
   },
-  onStartTally() {
-    this.counting = true;
+  methods: {
+    onStartTally() {
+      this.counting = true;
+      this.frontRunners = ["It"];
+    },
+    isTopTeir() {}
   }
-};
+});
+
+function createPickObj(pick: string): { pick: string; active: boolean } {
+  return { pick, active: true };
+}
 </script>
 
 <style scoped>
@@ -85,5 +104,12 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 1s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
 }
 </style>
