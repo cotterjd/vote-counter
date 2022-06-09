@@ -1,4 +1,6 @@
-# count-votes
+# count-votes-prototype
+
+must have the <a href="https://github.com/cotterjd/get-csv-data">get-csv-data</a> server running that will process the votes from a csv file
 
 ## Project setup
 ```
