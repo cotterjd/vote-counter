@@ -99,7 +99,7 @@ export default defineComponent({
   async mounted() {
     try {
       const { data }: { data: Obj[] } = await axios.get(
-        `http://localhost:3000/votes`,
+        `http://localhost:4000/data`,
         {
           headers: {
             "Content-Type": "application/json"
